@@ -41,7 +41,7 @@ export default function LoginPage() {
       <div className="max-w-md w-full space-y-8">
         {/* Logo/Header */}
         <div className="text-center">
-          <h1 className="text-4xl font-bold text-blue-600 mb-2">Relay That</h1>
+          <h1 className="text-4xl font-bold text-blue-600 mb-2">Relay It</h1>
           <p className="text-gray-600">Sign in to your account</p>
         </div>
 

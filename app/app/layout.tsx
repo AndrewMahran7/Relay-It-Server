@@ -13,7 +13,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           <div className="flex justify-between items-center h-16">
             {/* Logo/Brand */}
             <Link href="/app" className="flex items-center">
-              <h1 className="text-2xl font-bold text-blue-600">Relay That</h1>
+              <h1 className="text-2xl font-bold text-blue-600">Relay It</h1>
             </Link>
 
             {/* User Menu Placeholder */}

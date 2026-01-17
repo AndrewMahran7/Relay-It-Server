@@ -23,9 +23,9 @@ export default function SessionCardList({ sessions }: SessionCardListProps) {
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {sessions.map((session) => {
         // Use description if available, otherwise use first 120 chars of summary
+        const summary = session.regenerateState?.sessionSummary;
         const displayDescription = session.description || 
-          (session.regenerateState?.sessionSummary.slice(0, 120) + 
-          (session.regenerateState?.sessionSummary.length > 120 ? '...' : '')) || 
+          (summary ? summary.slice(0, 120) + (summary.length > 120 ? '...' : '') : null) || 
           'No description';
 
         return (

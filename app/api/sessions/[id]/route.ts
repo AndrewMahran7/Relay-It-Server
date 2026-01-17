@@ -46,9 +46,12 @@ type SessionDetailResponse = {
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Await params in Next.js 15+
+    const { id: sessionId } = await params;
+    
     // Authenticate user
     const authHeader = request.headers.get('Authorization');
     const userId = await getUserFromAuth(authHeader);
@@ -57,7 +60,6 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const sessionId = params.id;
     const supabase = getSupabaseServerClient();
 
     // Fetch session and verify ownership

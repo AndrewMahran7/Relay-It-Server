@@ -34,84 +34,93 @@ type ChatResponse = {
 function buildPrompt(userMessage: string, currentNote: string, context?: ChatContext): string {
   let prompt = `You are an AI assistant helping a user manage their markdown notes and research sessions.
 
-Your task is to:
-1. Determine if the user's message is an EDIT COMMAND or a QUESTION
-2. Respond appropriately based on the type
+Your job is to:
+1. Decide if the user's message is an EDIT COMMAND or a QUESTION
+2. If EDIT COMMAND: modify the note and return the full updated markdown
+3. If QUESTION: answer without modifying the note
+4. Always respond in STRICT JSON
 
-EDIT COMMANDS (modify the note):
+## Identifying Command Type
+
+**EDIT COMMANDS** modify the note. Look for:
+- Instruction verbs: remove, delete, add, insert, rewrite, shorten, expand, change, update, fix, clean up, make concise, rephrase, edit
+- References to note parts: title, summary, section, bullet, recommendation, item, etc.
+
+Examples:
 - "Remove the third recommendation"
 - "Rewrite the summary to be shorter"
 - "Add a section about budget"
-- "Change the title to 'My Japan Adventure'"
 - "Delete the second hotel"
 - "Make this more concise"
 
-QUESTIONS (answer without modifying):
+**QUESTIONS** ask for information without changing anything. Look for:
+- Question words: what, why, how, where, who, which, when, can you tell me
+- Informational requests without modification intent
+
+Examples:
 - "What hotels did I look at?"
 - "Summarize what's in my notes"
 - "What was the price of the second hotel?"
 - "How many recommendations do I have?"
 
-CURRENT NOTE (Markdown):
-\`\`\`markdown
-${currentNote}
-\`\`\`
+**When ambiguous, treat as QUESTION (do not modify).**
 
+## Current Note (Markdown):
+
+${currentNote}
+
+## User Message:
+
+"${userMessage}"
 `;
 
   // Add context if available
   if (context) {
     if (context.sessionName) {
-      prompt += `\nSESSION NAME: ${context.sessionName}`;
+      prompt += `\n\n## Session Info:\n- Name: ${context.sessionName}`;
     }
     if (context.sessionCategory) {
-      prompt += `\nSESSION CATEGORY: ${context.sessionCategory}`;
+      prompt += `\n- Category: ${context.sessionCategory}`;
     }
     if (context.screenshots && context.screenshots.length > 0) {
-      prompt += `\n\nSCREENSHOT CONTEXT (for answering questions):`;
+      prompt += `\n\n## Screenshot Context:`;
       context.screenshots.forEach((screenshot, idx) => {
-        prompt += `\n\nScreenshot ${idx + 1} (ID: ${screenshot.id}):`;
+        prompt += `\n\n### Screenshot ${idx + 1} (${screenshot.id}):`;
         prompt += `\nSummary: ${screenshot.summary}`;
         if (screenshot.rawText) {
-          prompt += `\nOCR Text: ${screenshot.rawText.substring(0, 500)}${screenshot.rawText.length > 500 ? '...' : ''}`;
+          const text = screenshot.rawText.substring(0, 500);
+          prompt += `\nOCR Text: ${text}${screenshot.rawText.length > 500 ? '...' : ''}`;
         }
       });
     }
   }
 
-  prompt += `\n\nUSER MESSAGE: "${userMessage}"
+  prompt += `
 
-INSTRUCTIONS:
+## Response Format
 
-1. Analyze the user message and determine if it's an EDIT COMMAND or a QUESTION.
-
-2. If EDIT COMMAND:
-   - Modify the note content according to the user's request
-   - Preserve markdown structure and formatting
-   - Return the FULL modified note (not just the changed part)
-   - Set noteWasModified: true
-   - Provide a short confirmation message like "Done! I've [description of change]."
-
-3. If QUESTION:
-   - Answer based on the current note and context
-   - DO NOT modify the note
-   - Set noteWasModified: false
-   - updatedNote should be the same as the current note (unchanged)
-   - Provide a helpful, natural answer
-
-RESPONSE FORMAT - Return ONLY valid JSON, no markdown, no explanations:
+You MUST respond with ONLY a JSON object (no markdown, no explanations):
 
 {
-  "reply": "Your response message here",
-  "updatedNote": "Full markdown note (modified if edit, unchanged if question)",
-  "noteWasModified": true or false
+  "reply": "Your message to the user",
+  "updatedNote": "Full markdown note (required if modified)",
+  "noteWasModified": boolean
 }
 
-IMPORTANT:
-- Return ONLY the JSON object
-- No markdown code blocks
-- No additional text or explanations
-- Ensure valid JSON syntax`;
+## Rules:
+
+**If EDIT COMMAND:**
+- Set noteWasModified: true
+- Return FULL modified note in updatedNote
+- Preserve markdown structure
+- Provide short confirmation in reply: "Done! I've [what you did]."
+
+**If QUESTION:**
+- Set noteWasModified: false
+- Keep note unchanged (updatedNote = original note)
+- Answer the question in reply based on note and context
+
+CRITICAL: Return ONLY the JSON object. No backticks, no explanations, no extra text.`;
 
   return prompt;
 }
